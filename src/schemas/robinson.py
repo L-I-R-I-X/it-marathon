@@ -31,7 +31,7 @@ class Body(BaseModel):
 
 class Edge(BaseModel):
     """Edge between two celestial bodies."""
-    model_config = ConfigDict(extra='forbid', coerce_numbers_to_str=False)
+    model_config = ConfigDict(extra='forbid', coerce_numbers_to_str=False, populate_by_name=True)
     
     from_: str = Field(..., alias='from')
     to: str
