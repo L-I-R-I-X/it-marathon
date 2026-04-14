@@ -167,7 +167,7 @@ def process_robinson_cruise(data: Dict[str, Any]) -> Dict[str, Any]:
     # Adjacency list: node -> list of (to_node, distance)
     adj: Dict[str, List[Tuple[str, float]]] = {}
     for edge in edges:
-        from_node = edge['from']
+        from_node = edge['from_']
         to_node = edge['to']
         dist = edge['distance']
         if from_node not in adj:
