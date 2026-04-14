@@ -1,0 +1,41 @@
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.pot
+*.pyc
+*.pyo
+*~
+.pytest_cache/
+.mypy_cache/
+
+# Docker
+.dockerenv
+Dockerfile
+docker-compose.yml
+
+# Dependencies
+requirements.txt
+
+# Source cache
+src/__pycache__/
+src/api/__pycache__/
+src/validators/__pycache__/
+tests/__pycache__/
+```
