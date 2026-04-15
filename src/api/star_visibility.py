@@ -143,9 +143,9 @@ def find_visibility_window(
     # Build index for quick parent lookup
     bodies_by_id = {body["id"]: body for body in bodies if "id" in body}
     
-    # Handle empty bodies case - star always visible
-    non_star_bodies = [b for b in bodies if b.get("type") != "star"]
-    if not non_star_bodies:
+    # Если нет тел, способных закрывать звезду (пустой список или только звёзды)
+    blocking_bodies = [b for b in bodies if b.get("type") in ["planet", "moon"]]
+    if not blocking_bodies:
         return {"wait": 0, "duration": "inf"}
     
     # Check initial visibility at t=0
@@ -153,7 +153,7 @@ def find_visibility_window(
     
     # If blocked at t=0, check if it's permanently blocked
     # by checking if all bodies have angular_velocity=0 and are blocking
-    all_stationary = all(b.get("angular_velocity", 0) == 0 for b in non_star_bodies)
+    all_stationary = all(b.get("angular_velocity", 0) == 0 for b in blocking_bodies)
     
     if all_stationary:
         # Positions don't change, so visibility is constant
@@ -171,7 +171,7 @@ def find_visibility_window(
     # For rotating bodies, find the period (LCM of all periods)
     # Period = 360 / angular_velocity degrees per second
     periods = []
-    for body in non_star_bodies:
+    for body in blocking_bodies:
         av = body.get("angular_velocity", 0)
         if av != 0:
             period = 360.0 / abs(av)
@@ -263,8 +263,14 @@ def process_star_visibility(data: Dict[str, Any]) -> Dict[str, Any]:
     if result is None:
         return {"found": False}
     
+    # Обработка "инфинита" в ответе
+    if result["duration"] == "inf":
+        duration_value = "inf"
+    else:
+        duration_value = int(result["duration"])  # целое число секунд
+    
     return {
         "found": True,
-        "next_fitting_interval_in": result["wait"],
-        "interval_duration": result["duration"]
+        "next_fitting_interval_in": int(result["wait"]),
+        "interval_duration": duration_value
     }

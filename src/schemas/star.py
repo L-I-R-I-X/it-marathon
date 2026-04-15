@@ -30,10 +30,10 @@ class OrbitingBody(BaseModel):
     type: Literal["planet", "moon"]
     id: str
     parent_id: str
-    orbit_radius: float = Field(..., gt=0)
-    angular_velocity: float = Field(..., gt=0)
+    orbit_radius: float = Field(..., gt=0, le=1e12)
+    angular_velocity: float = Field(..., ge=0)
     initial_angle: float = Field(..., ge=0, lt=360)
-    radius: float = Field(..., gt=0)
+    radius: float = Field(..., gt=0, le=1e10)
     rotation_clockwise: bool
 
 
