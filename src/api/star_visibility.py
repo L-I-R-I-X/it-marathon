@@ -248,9 +248,15 @@ def process_star_visibility(data: Dict[str, Any]) -> Dict[str, Any]:
     target_vector = (target_star_vector["x"], target_star_vector["y"])
     required_duration = observation_params["required_transmission_time"]
     
-    # Parse start_time (not used in calculation but required by spec)
-    start_time_str = observation_params["start_time"]
-    start_timestamp = datetime.fromisoformat(start_time_str).replace(tzinfo=timezone.utc).timestamp()
+    # Parse start_time - может быть строкой или datetime объектом
+    start_time_val = observation_params["start_time"]
+    if isinstance(start_time_val, str):
+        start_timestamp = datetime.fromisoformat(start_time_val).replace(tzinfo=timezone.utc).timestamp()
+    else:
+        # Уже datetime объект от Pydantic
+        if start_time_val.tzinfo is None:
+            start_time_val = start_time_val.replace(tzinfo=timezone.utc)
+        start_timestamp = start_time_val.timestamp()
     
     # Find visibility window
     result = find_visibility_window(
