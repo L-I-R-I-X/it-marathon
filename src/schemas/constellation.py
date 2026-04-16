@@ -38,7 +38,7 @@ class ClusterParams(BaseModel):
 
 class TargetEdge(BaseModel):
     """Edge in target constellation graph."""
-    model_config = ConfigDict(extra='forbid', coerce_numbers_to_str=False)
+    model_config = ConfigDict(extra='forbid', coerce_numbers_to_str=False, populate_by_name=True)
     
     from_: int = Field(..., alias='from', ge=0)
     to: int = Field(..., ge=0)
