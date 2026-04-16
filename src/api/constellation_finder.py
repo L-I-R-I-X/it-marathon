@@ -117,7 +117,7 @@ def build_mst(cluster_indices: List[int], stars: List[dict]) -> List[Tuple[int, 
     return mst_edges
 
 
-def get_edge_signature(mst_edges: List[Tuple[int, int, float]]) -> List[Tuple[int, int, int]]:
+def get_edge_signature(mst_edges: List[Tuple[int, int, float]]) -> Dict[Tuple[int, int], int]:
     """
     Get edge signature with ranks based on sorted order by length.
     
@@ -125,25 +125,21 @@ def get_edge_signature(mst_edges: List[Tuple[int, int, float]]) -> List[Tuple[in
         mst_edges: List of MST edges (u, v, distance)
         
     Returns:
-        List of (u, v, rank) tuples
+        Dict mapping normalized edge key (min_u_v, max_u_v) to rank
     """
     if not mst_edges:
-        return []
+        return {}
     
     # Sort edges by distance and assign ranks
-    indexed_edges = sorted(enumerate(mst_edges), key=lambda x: x[1][2])
+    sorted_edges = sorted(mst_edges, key=lambda e: e[2])
     
-    # Create mapping from original index to rank
-    edge_rank = {}
-    for rank, (orig_idx, _) in enumerate(indexed_edges):
-        edge_rank[orig_idx] = rank
+    # Create mapping from normalized edge key to rank
+    signature = {}
+    for rank, (u, v, _) in enumerate(sorted_edges):
+        key = (min(u, v), max(u, v))
+        signature[key] = rank
     
-    # Return edges with ranks
-    result = []
-    for i, (u, v, _) in enumerate(mst_edges):
-        result.append((u, v, edge_rank[i]))
-    
-    return result
+    return signature
 
 
 def check_isomorphism(
@@ -166,6 +162,12 @@ def check_isomorphism(
     """
     if len(target_edges) != len(candidate_edges):
         return None
+    
+    # Special case: single edge - any bijection works
+    if len(target_edges) == 1 and len(candidate_edges) == 1:
+        # For n=2, just return the candidate names in order
+        # Any permutation is valid since there's only one edge
+        return candidate_names[:len(target_names)]
     
     if len(target_edges) == 0:
         return None  # Need at least one edge
@@ -200,16 +202,6 @@ def check_isomorphism(
     target_sig = get_edge_signature(target_edges)
     candidate_sig = get_edge_signature(candidate_edges)
     
-    # Build target edge map: frozenset{u,v} -> rank
-    target_edge_map: Dict[frozenset, int] = {}
-    for u, v, rank in target_sig:
-        target_edge_map[frozenset([u, v])] = rank
-    
-    # Build candidate edge map: frozenset{u,v} -> rank
-    candidate_edge_map: Dict[frozenset, int] = {}
-    for u, v, rank in candidate_sig:
-        candidate_edge_map[frozenset([u, v])] = rank
-    
     # Find valid permutations with degree preservation
     # Group candidate vertices by degree
     candidate_by_degree: Dict[int, List[int]] = defaultdict(list)
@@ -226,67 +218,65 @@ def check_isomorphism(
     
     matches_found = []
     
-    # Generate permutations with degree-preserving constraint
-    def generate_degree_preserving_perms():
-        """Generate permutations that preserve vertex degrees."""
-        degrees = sorted(target_by_degree.keys())
-        
-        # For each degree level, we need to map target vertices to candidate vertices
-        mappings = []
-        for deg in degrees:
-            targets = target_by_degree[deg]
-            candidates = candidate_by_degree[deg]
-            mappings.append((targets, candidates))
-        
-        # Generate all combinations of permutations for each degree group
-        from itertools import product
-        
-        perms_for_groups = []
-        for targets, candidates in mappings:
-            # All bijections between targets and candidates of same degree
-            perms_for_groups.append(list(permutations(candidates)))
-        
-        for combo in product(*perms_for_groups):
-            # Build full permutation
-            perm = [0] * n
-            for i, (targets, _) in enumerate(mappings):
-                for j, t in enumerate(targets):
-                    perm[t] = combo[i][j]
-            yield perm
+    # Generate all permutations for small n, or degree-preserving for larger
+    def generate_perms():
+        """Generate all permutations or degree-preserving permutations."""
+        if n <= 2:
+            # For n=2, generate all permutations explicitly
+            for perm in permutations(range(n)):
+                yield list(perm)
+        else:
+            # For n >= 3, use degree-preserving optimization
+            degrees = sorted(target_by_degree.keys())
+            
+            mappings = []
+            for deg in degrees:
+                targets = target_by_degree[deg]
+                candidates = candidate_by_degree[deg]
+                mappings.append((targets, candidates))
+            
+            from itertools import product
+            
+            perms_for_groups = []
+            for targets, candidates in mappings:
+                perms_for_groups.append(list(permutations(candidates)))
+            
+            for combo in product(*perms_for_groups):
+                perm = [0] * n
+                for i, (targets, _) in enumerate(mappings):
+                    for j, t in enumerate(targets):
+                        perm[t] = combo[i][j]
+                yield perm
     
-    for perm in generate_degree_preserving_perms():
-        # Map candidate edges through permutation
-        mapped_edges_ok = True
-        mapped_edge_ranks = {}
+    for perm in generate_perms():
+        # Check structural match and rank match
+        struct_match = True
+        rank_match = True
         
-        for u, v, rank in candidate_sig:
-            pu, pv = perm[u], perm[v]
-            edge_key = frozenset([pu, pv])
+        for tu, tv, _ in target_edges:
+            # Map target vertices through permutation
+            cu, cv = perm[tu], perm[tv]
+            key_target = (min(tu, tv), max(tu, tv))
+            key_candidate = (min(cu, cv), max(cu, cv))
             
-            if edge_key not in target_edge_map:
-                mapped_edges_ok = False
+            # Structure: edge must exist in candidate
+            if key_candidate not in candidate_sig:
+                struct_match = False
                 break
             
-            if target_edge_map[edge_key] != rank:
-                mapped_edges_ok = False
+            # Order: ranks must match
+            if target_sig[key_target] != candidate_sig[key_candidate]:
+                rank_match = False
                 break
+        
+        if struct_match and rank_match:
+            # Valid isomorphism found
+            matched_names = [candidate_names[perm[i]] for i in range(n)]
+            matches_found.append(matched_names)
             
-            mapped_edge_ranks[edge_key] = rank
-        
-        if not mapped_edges_ok:
-            continue
-        
-        # Verify all target edges are covered
-        if len(mapped_edge_ranks) != len(target_edge_map):
-            continue
-        
-        # Valid isomorphism found
-        matched_names = [candidate_names[perm[i]] for i in range(n)]
-        matches_found.append(matched_names)
-        
-        # Early exit if more than one match
-        if len(matches_found) > 1:
-            return None
+            # Early exit if more than one match
+            if len(matches_found) > 1:
+                return None
     
     if len(matches_found) == 1:
         return matches_found[0]
