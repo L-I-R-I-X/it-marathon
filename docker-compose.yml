@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  marathon-app:
+    image: gitverse.ru/registry/${GITVERSE_USER}/digital-marathon-2026:latest
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
