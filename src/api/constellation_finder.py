@@ -320,7 +320,8 @@ def process_constellation_finder(data: Dict[str, Any]) -> Dict[str, Any]:
     valid_clusters = [c for c in clusters if min_size <= len(c) <= max_size]
     
     # Step 3: Build MST for each valid cluster and compare with target
-    target_edges = [(e["from"], e["to"], e["distance"]) for e in target_constellation["edges"]]
+    # Use from_ (Python attribute name) instead of "from" (JSON key)
+    target_edges = [(e["from_"], e["to"], e["distance"]) for e in target_constellation["edges"]]
     
     # Determine number of vertices in target
     target_vertices = set()
