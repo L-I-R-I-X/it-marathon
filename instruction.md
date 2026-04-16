@@ -1,97 +1,31 @@
-# Digital Marathon 2026 - API Setup Instructions
+# Инструкция по запуску решения
 
-## Dependencies Installation
+## Системные требования
+- ОС: Linux / Windows / macOS
+- Python 3.14
+- Docker 24+ (для контейнеризации)
 
-Install required Python packages:
-
+## Установка зависимостей
 ```bash
 pip install -r requirements.txt
 ```
 
-## Running the Server
-
-Start the FastAPI server:
-
+## Запуск сервера
 ```bash
 uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
-The server will be available at `http://localhost:8000`.
+Сервер будет доступен по адресу `http://localhost:8000`.
+Документация Swagger UI доступна по адресу `http://localhost:8000/docs`.
 
-Swagger UI documentation is available at `http://localhost:8000/docs`.
+## Использование Docker
 
-## API Endpoints
-
-### POST /api/v1/robinson_cruise
-
-**Example request:**
+Сборка образа:
 ```bash
-curl -X POST "http://localhost:8000/api/v1/robinson_cruise" \
-  -H "Content-Type: application/json" \
-  -d '{}'
+docker build -t digital-marathon-2026 .
 ```
 
-**Expected response (400 Bad Request for empty/invalid input):**
-```json
-{"status": "incorrect_input"}
-```
-
-**Expected response (200 OK for valid input):**
-```json
-{"can_reach": false}
-```
-
-### POST /api/v1/star_visibility
-
-**Example request:**
+Запуск через docker-compose:
 ```bash
-curl -X POST "http://localhost:8000/api/v1/star_visibility" \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-**Expected response (400 Bad Request for empty/invalid input):**
-```json
-{"status": "incorrect_input"}
-```
-
-**Expected response (200 OK for valid input):**
-```json
-{"found": false}
-```
-
-### POST /api/v1/constellation_finder
-
-**Example request:**
-```bash
-curl -X POST "http://localhost:8000/api/v1/constellation_finder" \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-**Expected response (400 Bad Request for empty/invalid input):**
-```json
-{"status": "incorrect_input"}
-```
-
-**Expected response (200 OK for valid input):**
-```json
-{"found": false}
-```
-
-## HTTP Status Codes
-
-- **200 OK**: Successful request processing
-- **400 Bad Request**: Invalid input data (returns `{"status": "incorrect_input"}`)
-
-## Docker Usage
-
-Build the Docker image:
-```bash
-docker build -t test-image .
-```
-
-Run with docker-compose:
-```bash
-GITVERSE_USER=your_username docker-compose up
+GITVERSE_USER=ваш_пользователь docker-compose up
 ```
