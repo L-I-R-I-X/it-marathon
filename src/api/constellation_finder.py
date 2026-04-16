@@ -320,7 +320,15 @@ def process_constellation_finder(data: Dict[str, Any]) -> Dict[str, Any]:
     valid_clusters = [c for c in clusters if min_size <= len(c) <= max_size]
     
     # Step 3: Build MST for each valid cluster and compare with target
-    target_edges = [(e["from"], e["to"], e["distance"]) for e in target_constellation["edges"]]
+    # Use universal access for 'from' field (handles both 'from' JSON key and 'from_' Python key)
+    # Note: use 'is not None' check because 0 is a valid vertex index (falsy value)
+    def get_edge_values(edge_dict: dict) -> Tuple[int, int, float]:
+        from_val = edge_dict.get("from_") if edge_dict.get("from_") is not None else edge_dict.get("from")
+        to_val = edge_dict["to"]
+        dist_val = edge_dict["distance"]
+        return (from_val, to_val, dist_val)
+    
+    target_edges = [get_edge_values(e) for e in target_constellation["edges"]]
     
     # Determine number of vertices in target
     target_vertices = set()
